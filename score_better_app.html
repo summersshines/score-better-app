@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Score Better — Short Game & Putting Intensive</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --green:#1a6b3c;--dkgreen:#0d2e1a;--gold:#c9a84c;--bg:#f4f6f8;--card:#fff;--dark:#1a1a1a;--mid:#555;--light:#999;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--dark);font-size:13px;}
+.hdr{background:linear-gradient(135deg,#0d2e1a,#1a6b3c);color:white;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.hdr .logo{font-size:22px;flex-shrink:0;}
+.hdr-text h1{font-size:15px;font-weight:800;line-height:1.2;}
+.hdr-text p{font-size:10px;opacity:.7;}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#4caf50;display:inline-block;}
+.sync-dot.off{background:#ff5252;}
+#save-ind{font-size:10px;opacity:.8;white-space:nowrap;}
+#loading{position:fixed;inset:0;background:rgba(13,46,26,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;color:white;gap:14px;}
+.spinner{width:40px;height:40px;border:4px solid rgba(255,255,255,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.tabs{display:flex;background:#0d2e1a;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;position:sticky;top:56px;z-index:99;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:12px 14px;font-size:12px;font-weight:700;color:rgba(255,255,255,.5);cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;transition:all .2s;}
+.tab.active{color:white;border-bottom-color:var(--gold);}
+.content{padding:16px;max-width:980px;margin:0 auto;}
+.panel{display:none;}.panel.active{display:block;}
+.stitle{font-size:18px;font-weight:900;margin-bottom:3px;}.stitle span{color:#1a6b3c;}
+.sdesc{font-size:12px;color:var(--mid);margin-bottom:14px;line-height:1.5;}
+.card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:14px;}
+.card h3{font-size:13px;font-weight:800;margin-bottom:10px;}
+.card.green{border-top:4px solid var(--green);}.card.green h3{color:var(--green);}
+.card.gold{border-top:4px solid var(--gold);}.card.gold h3{color:#9a7020;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fr{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.fr label{font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.5px;}
+.fr input,.fr select,.fr textarea{border:1px solid #ddd;border-radius:8px;padding:10px 12px;font-size:16px;font-family:inherit;background:#fafafa;transition:border .2s;resize:vertical;-webkit-appearance:none;}
+.fr input:focus,.fr select:focus,.fr textarea:focus{outline:none;border-color:var(--green);background:white;}
+.fr select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23999' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;}
+.btn{display:inline-block;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;}
+.btn-g{background:var(--green);color:white;}.btn-g:hover{background:#155530;}
+.btn-o{background:transparent;border:2px solid var(--green);color:var(--green);}.btn-o:hover{background:var(--green);color:white;}
+.btn-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.flash{font-size:12px;color:var(--green);margin-top:8px;display:none;padding:8px 12px;background:#eef8f2;border-radius:6px;}
+.div{height:1px;background:#eee;margin:16px 0;}
+/* Week cards */
+.week-card{background:white;border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.06);}
+.week-card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;user-select:none;border-left:5px solid var(--green);}
+.week-card-header.w1{border-left-color:#8b5e2a;}
+.week-card-header.w6{border-left-color:var(--gold);}
+.week-card-header h3{font-size:13px;font-weight:800;color:var(--dark);}
+.week-card-header .week-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;background:#eef8f2;color:var(--green);}
+.week-card-header.w1 .week-badge{background:#f5e6d3;color:#8b5e2a;}
+.week-card-header.w6 .week-badge{background:#fff3cd;color:#9a7020;}
+.week-chev{font-size:11px;color:var(--light);transition:transform .2s;}
+.week-chev.open{transform:rotate(180deg);}
+.week-card-body{display:none;padding:0 16px 16px;}
+.week-card-body.open{display:block;}
+.week-section{margin-bottom:10px;}
+.week-section-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mid);margin-bottom:5px;}
+.week-cell{font-size:12px;color:var(--mid);line-height:1.6;padding:10px 12px;background:#fafafa;border-radius:8px;border-left:3px solid #ddd;white-space:pre-wrap;min-height:44px;}
+.week-cell:focus{outline:none;background:#fff;border-left-color:var(--green);box-shadow:0 0 0 2px rgba(26,107,60,.12);}
+/* Planner */
+.group-tabs{display:flex;gap:0;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:16px;}
+.group-tab{flex:1;padding:10px;font-size:12px;font-weight:800;border:none;cursor:pointer;transition:all .2s;text-align:center;}
+.planner-wrap{overflow-x:auto;border-radius:8px;}
+table.planner{width:100%;border-collapse:collapse;font-size:12px;min-width:460px;}
+table.planner th{padding:9px 10px;text-align:left;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;}
+table.planner td{padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:top;}
+table.planner tr:last-child td{border-bottom:none;}
+.wk-num{font-weight:800;color:var(--green);text-align:center;width:36px;}
+[contenteditable]{outline:none;border-radius:4px;padding:3px 5px;transition:background .15s;min-width:20px;display:inline-block;}
+[contenteditable]:hover{background:rgba(26,107,60,.07);}
+[contenteditable]:focus{background:rgba(26,107,60,.12);box-shadow:0 0 0 2px rgba(26,107,60,.25);}
+/* Player profiles */
+.player-sel-bar{background:white;border-radius:12px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.player-sel-bar label{font-size:11px;font-weight:800;color:var(--mid);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.profile-section{background:white;border-radius:12px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;}
+.profile-section-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;user-select:none;}
+.profile-section-header:hover{background:#fafafa;}
+.profile-section-title{display:flex;align-items:center;gap:10px;}
+.profile-section-title h3{font-size:13px;font-weight:800;margin:0;}
+.profile-section-summary{font-size:11px;color:var(--mid);margin-left:8px;}
+.profile-section-chev{font-size:11px;color:var(--light);transition:transform .2s;}
+.profile-section-chev.open{transform:rotate(180deg);}
+.profile-section-body{display:none;padding:0 16px 16px;}
+.profile-section-body.open{display:block;}
+.profile-section.pi-section{border-top:4px solid var(--green);}
+.profile-section.pi-section .profile-section-title h3{color:var(--green);}
+.profile-section.notes-section{border-top:4px solid var(--gold);}
+.profile-section.notes-section .profile-section-title h3{color:#9a7020;}
+/* PI categories */
+.pi-cat-card{background:#fafafa;border:1px solid #eee;border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.pi-cat-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:white;border-bottom:1px solid #eee;flex-wrap:wrap;gap:8px;}
+.pi-cat-name{font-size:12px;font-weight:800;color:var(--dark);}
+.pi-current{display:flex;align-items:center;gap:8px;}
+.pi-score-badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px;}
+.pi-delta{font-size:11px;font-weight:800;padding:3px 8px;border-radius:6px;}
+.pi-delta.up{background:#eef8f2;color:var(--green);}
+.pi-delta.down{background:#fde8e8;color:#c0392b;}
+.pi-delta.flat{background:#f0f0f0;color:#999;}
+.pi-entry-area{padding:12px 14px;}
+.pi-entry-row{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.pi-entry-row .fr{margin-bottom:0;flex:1;min-width:80px;}
+.pi-entry-row .fr input{font-size:15px;padding:8px 10px;}
+.pi-log{margin-top:8px;}
+.pi-log-row{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:white;border-radius:6px;margin-bottom:4px;border:1px solid #eee;font-size:11px;gap:8px;flex-wrap:wrap;}
+.pi-log-del{cursor:pointer;color:#ddd;font-size:13px;padding:2px 4px;flex-shrink:0;}.pi-log-del:hover{color:#e55;}
+.pi-no-entries{font-size:11px;color:var(--light);padding:4px 0;}
+/* PI score color bands */
+.pi-band-low{background:#fde8e8;color:#c0392b;}
+.pi-band-mid{background:#fff3cd;color:#856404;}
+.pi-band-good{background:#eef8f2;color:#1a6b3c;}
+.pi-band-great{background:#d0e8ff;color:#1a4a7a;}
+/* Player list */
+.player-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.player-item{background:white;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;transition:box-shadow .2s;}
+.player-item:hover{box-shadow:0 3px 12px rgba(0,0,0,.12);}
+.pav{width:36px;height:36px;border-radius:50%;background:#d4edda;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.pav.thu{background:#d4edda;}.pav.tue{background:#d0e4f7;}
+.pinfo{flex:1;min-width:0;}.pinfo h4{font-size:13px;font-weight:700;}.pinfo p{font-size:11px;color:var(--mid);}
+.pdel{font-size:16px;cursor:pointer;color:#ccc;padding:4px;}.pdel:hover{color:#e55;}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;}
+.badge.thu{background:#d4edda;color:#1a6b3c;}
+.badge.tue{background:#d0e4f7;color:#1a4a7a;}
+/* Group overview */
+.ov-group-card{background:white;border-radius:12px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;}
+.ov-group-header{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer;}
+.ov-group-header.thu{background:#eef8f2;border-bottom:3px solid var(--green);}
+.ov-group-header.tue{background:#eef3fa;border-bottom:3px solid #1a4a7a;}
+.ov-group-body{display:none;padding:12px 16px;}
+.ov-player-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fafafa;border-radius:8px;margin-bottom:8px;border:1px solid #eee;flex-wrap:wrap;}
+.ov-pi-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;}
+.ov-pi-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:#eee;color:#555;}
+/* PI Trends tab */
+.pi-trend-group-sel{display:flex;gap:0;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:16px;}
+.pi-trend-group-btn{flex:1;padding:10px;font-size:12px;font-weight:800;border:none;cursor:pointer;transition:all .2s;}
+.pi-player-sel{background:white;border-radius:12px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.07);margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.trend-card{background:white;border-radius:12px;margin-bottom:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+.trend-card h3{font-size:13px;font-weight:800;margin-bottom:12px;color:var(--green);}
+.trend-chart-wrap{background:#fafafa;border-radius:8px;padding:8px;border:1px solid #eee;margin-bottom:8px;}
+/* On-course notes per week */
+.oc-week-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.oc-week-label{font-size:11px;font-weight:800;color:var(--mid);white-space:nowrap;padding-top:11px;width:50px;flex-shrink:0;}
+.oc-week-input{flex:1;border:1px solid #ddd;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;background:#fafafa;resize:vertical;min-height:42px;}
+.oc-week-input:focus{outline:none;border-color:var(--green);background:white;}
+/* Dashboard quick actions */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.dash-btn{background:var(--green);color:white;border:none;border-radius:12px;padding:16px 12px;font-size:13px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.dash-btn.blue{background:#1a4a7a;}
+.dash-btn.gold{background:linear-gradient(135deg,#7a5200,#c9a84c);}
+.dash-btn:active{opacity:.85;}
+/* Quick log modal */
+.ql-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:flex-end;justify-content:center;}
+.ql-overlay.open{display:flex;}
+.ql-sheet{background:white;border-radius:20px 20px 0 0;width:100%;max-width:540px;padding:20px 20px 32px;box-shadow:0 -8px 32px rgba(0,0,0,.18);max-height:92vh;overflow-y:auto;}
+.ql-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.ql-header h2{font-size:16px;font-weight:900;}
+.ql-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--light);padding:4px;}
+.ql-fr{display:flex;flex-direction:column;gap:4px;margin-bottom:12px;}
+.ql-fr label{font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.5px;}
+.ql-fr select,.ql-fr input{border:1.5px solid #ddd;border-radius:10px;padding:11px 14px;font-size:16px;font-family:inherit;background:#fafafa;-webkit-appearance:none;width:100%;transition:border .2s;}
+.ql-fr select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23999' d='M6 8L0 0h12z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+.ql-fr select:focus,.ql-fr input:focus{outline:none;border-color:var(--green);background:white;}
+.ql-log-btn{width:100%;padding:14px;background:var(--green);color:white;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;transition:background .2s;}
+.ql-log-btn:disabled{background:#a0c4b0;cursor:not-allowed;}
+.ql-success{display:none;align-items:center;gap:10px;padding:12px 14px;background:#eef8f2;border-radius:10px;margin-top:12px;border:1px solid #a8d5b8;}
+.ql-success.visible{display:flex;}
+@media(min-width:541px){.ql-overlay{align-items:center;}.ql-sheet{border-radius:20px;margin:16px;}}
+@media(max-width:600px){.g2{grid-template-columns:1fr;}.dash-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div id="loading"><div class="spinner"></div><p>Loading Score Better…</p></div>
+<div class="hdr">
+  <div class="logo">⛳</div>
+  <div class="hdr-text">
+    <h1>Score Better — Short Game & Putting Intensive</h1>
+    <p>Ryde Parramatta Golf Club · Anthony Summers</p>
+  </div>
+  <div class="hdr-right">
+    <div id="save-ind"><span class="sync-dot" id="sync-dot"></span> <span id="sync-msg">Connecting…</span></div>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab active" onclick="showTab('dashboard',this)">🏠 Home</div>
+  <div class="tab" onclick="showTab('program',this)">📋 Program</div>
+  <div class="tab" onclick="showTab('planner',this)">🗓️ Planner</div>
+  <div class="tab" onclick="showTab('players',this)">👤 Players</div>
+  <div class="tab" onclick="showTab('overview',this)">👥 Groups</div>
+  <div class="tab" onclick="showTab('trends',this)">📊 PI Trends</div>
+</div>
+<div class="content">
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="panel active">
+  <div class="stitle">🏠 Score Better <span>Dashboard</span></div>
+  <div class="sdesc">6-week short game & putting intensive · Thursdays 10am & Tuesdays 2:30pm</div>
+  <div class="dash-grid">
+    <button class="dash-btn" onclick="openQuickLog()"><span style="font-size:22px;">⚡</span>Quick Log PI</button>
+    <button class="dash-btn blue" onclick="showTab('players',document.querySelectorAll('.tab')[3]);setTimeout(newPlayerForm,100)"><span style="font-size:22px;">➕</span>Add Player</button>
+    <button class="dash-btn" style="background:#8b5e2a;" onclick="showTab('program',document.querySelectorAll('.tab')[1])"><span style="font-size:22px;">📋</span>View Program</button>
+    <button class="dash-btn gold" onclick="showTab('overview',document.querySelectorAll('.tab')[4])"><span style="font-size:22px;">👥</span>Group Overview</button>
+  </div>
+  <div class="card green">
+    <h3 id="dash-week-title">📅 Current Week</h3>
+    <div id="dash-week-content"><p style="font-size:12px;color:var(--light);">Set a program start date in the Planner to see current week info.</p></div>
+  </div>
+  <div class="card">
+    <h3>⚠️ Baseline Not Yet Logged</h3>
+    <div id="dash-attention"><p style="font-size:12px;color:var(--light);">Loading…</p></div>
+  </div>
+</div>
+
+<!-- PROGRAM -->
+<div id="program" class="panel">
+  <div class="stitle">📋 6-Week <span>Program</span></div>
+  <div class="sdesc">Click any field to edit. Changes sync automatically.</div>
+  <div id="program-weeks"></div>
+  <div style="position:sticky;bottom:0;background:white;border-top:1px solid #eee;padding:10px 0;margin-top:8px;">
+    <button class="btn btn-g" style="width:100%;" onclick="saveProgram()">💾 Save Program Changes</button>
+    <div class="flash" id="program-flash">✓ Saved!</div>
+  </div>
+</div>
+
+<!-- PLANNER -->
+<div id="planner" class="panel">
+  <div class="stitle">🗓️ Session <span>Planner</span></div>
+  <div class="sdesc">Week-by-week session plan for each group. Click any cell to edit.</div>
+  <div class="group-tabs">
+    <button class="group-tab" id="ptab-thu" onclick="showPlannerGroup('thu')" style="background:#eef8f2;color:var(--green);border-bottom:3px solid var(--green);">⛳ Thursday 10am</button>
+    <button class="group-tab" id="ptab-tue" onclick="showPlannerGroup('tue')" style="background:#f0f0f0;color:#999;border-bottom:3px solid transparent;">⛳ Tuesday 2:30pm</button>
+  </div>
+  <div id="planner-thu">
+    <div class="card" style="padding:12px;">
+      <div class="planner-wrap"><table class="planner"><thead><tr><th style="width:36px;">Wk</th><th style="background:#eef8f2;color:var(--green);width:130px;">Session Focus</th><th style="background:#eef8f2;color:var(--green);">Key Activities</th><th style="background:#eef8f2;color:var(--green);width:160px;">Notes</th></tr></thead><tbody id="planner-body-thu"></tbody></table></div>
+    </div>
+  </div>
+  <div id="planner-tue" style="display:none;">
+    <div class="card" style="padding:12px;">
+      <div class="planner-wrap"><table class="planner"><thead><tr><th style="width:36px;">Wk</th><th style="background:#eef3fa;color:#1a4a7a;width:130px;">Session Focus</th><th style="background:#eef3fa;color:#1a4a7a;">Key Activities</th><th style="background:#eef3fa;color:#1a4a7a;width:160px;">Notes</th></tr></thead><tbody id="planner-body-tue"></tbody></table></div>
+    </div>
+  </div>
+  <div class="div"></div>
+  <div class="card gold">
+    <h3>📌 Program Details</h3>
+    <div class="g2">
+      <div>
+        <div class="fr"><label>Thursday Group Start Date</label><input type="date" id="prog-start-thu"></div>
+        <div class="fr"><label>Tuesday Group Start Date</label><input type="date" id="prog-start-tue"></div>
+      </div>
+      <div>
+        <div class="fr"><label>Notes</label><textarea id="prog-notes" rows="4" placeholder="Program notes, venue details, etc."></textarea></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-g" onclick="savePlannerDetails()">💾 Save Details</button>
+    </div>
+    <div class="flash" id="planner-flash">✓ Saved!</div>
+  </div>
+</div>
+
+<!-- PLAYERS -->
+<div id="players" class="panel">
+  <div class="stitle">👤 Player <span>Profiles</span></div>
+  <div class="sdesc">Select a player to view and update their profile.</div>
+  <div class="player-sel-bar">
+    <label>Select Player</label>
+    <select id="player-select" onchange="loadPlayerProfile()" style="flex:1;min-width:180px;border:2px solid var(--green);border-radius:8px;padding:10px 32px 10px 12px;font-size:14px;font-family:inherit;background:#fafafa url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27 viewBox=%270 0 12 8%27%3E%3Cpath fill=%27%23999%27 d=%27M6 8L0 0h12z%27/%3E%3C/svg%3E') no-repeat right 12px center;-webkit-appearance:none;"></select>
+    <button class="btn btn-g" style="font-size:12px;padding:8px 14px;" onclick="newPlayerForm()">+ New Player</button>
+  </div>
+
+  <div id="player-form-wrap">
+    <div class="card">
+      <h3 id="form-title">➕ New Player Profile</h3>
+      <input type="hidden" id="p-id">
+      <div class="g2">
+        <div>
+          <div class="fr"><label>Player Name</label><input type="text" id="p-name" placeholder="First & last name"></div>
+          <div class="fr"><label>Handicap</label><input type="text" id="p-hcp" placeholder="e.g. 14.2"></div>
+          <div class="fr"><label>Group</label>
+            <select id="p-group">
+              <option value="thu">Thursday 10am</option>
+              <option value="tue">Tuesday 2:30pm</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="fr"><label>Goal for the Program</label><textarea id="p-goal" rows="4" placeholder="What do they want to achieve from Score Better?"></textarea></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-g" onclick="savePlayer()">💾 Save Profile</button>
+        <button class="btn btn-o" onclick="newPlayerForm()">↺ Clear / New</button>
+      </div>
+      <div class="flash" id="player-flash">✓ Profile saved!</div>
+    </div>
+
+    <!-- PI Section -->
+    <div class="profile-section pi-section" id="pi-section-wrap">
+      <div class="profile-section-header" onclick="toggleSection('pi-body')">
+        <div class="profile-section-title">
+          <h3>📊 Performance Index</h3>
+          <span class="profile-section-summary" id="pi-summary">No entries yet</span>
+        </div>
+        <span class="profile-section-chev" id="pi-body-chev">▼</span>
+      </div>
+      <div class="profile-section-body" id="pi-body">
+        <p style="font-size:11px;color:var(--mid);margin-bottom:14px;margin-top:4px;">Log PI score /100 for each category. Week 1 entry is automatically the baseline.</p>
+        <div id="pi-cats"></div>
+      </div>
+    </div>
+
+    <!-- On-course notes -->
+    <div class="profile-section notes-section" id="oc-section-wrap">
+      <div class="profile-section-header" onclick="toggleSection('oc-body')">
+        <div class="profile-section-title">
+          <h3>⛳ On-Course Notes</h3>
+          <span class="profile-section-summary" id="oc-summary">No notes yet</span>
+        </div>
+        <span class="profile-section-chev" id="oc-body-chev">▼</span>
+      </div>
+      <div class="profile-section-body" id="oc-body">
+        <p style="font-size:11px;color:var(--mid);margin-bottom:12px;margin-top:4px;">Session observations from on-course play (Week 2 onwards).</p>
+        <div id="oc-notes-fields"></div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-bottom:14px;">
+      <button class="btn btn-g" onclick="savePlayer()">💾 Save Profile</button>
+      <button class="btn btn-o" onclick="newPlayerForm()">↺ Clear / New</button>
+    </div>
+  </div>
+
+  <div class="div"></div>
+  <div class="stitle" style="font-size:15px;margin-bottom:8px;">All Players <span id="player-count"></span></div>
+  <div class="player-list" id="player-list"><p style="font-size:12px;color:var(--light);">No players added yet.</p></div>
+</div>
+
+<!-- GROUP OVERVIEW -->
+<div id="overview" class="panel">
+  <div class="stitle">👥 Group <span>Overview</span></div>
+  <div class="sdesc">Latest PI scores for all players across both groups.</div>
+  <div id="ov-content"></div>
+</div>
+
+<!-- PI TRENDS -->
+<div id="trends" class="panel">
+  <div class="stitle">📊 PI <span>Trends</span></div>
+  <div class="sdesc">Session-by-session Performance Index progression per player.</div>
+  <div class="pi-player-sel">
+    <label style="font-size:11px;font-weight:800;color:var(--mid);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">Player</label>
+    <select id="trend-player-sel" onchange="renderTrends()" style="flex:1;min-width:180px;border:2px solid var(--green);border-radius:8px;padding:10px 32px 10px 12px;font-size:14px;font-family:inherit;background:#fafafa url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27 viewBox=%270 0 12 8%27%3E%3Cpath fill=%27%23999%27 d=%27M6 8L0 0h12z%27/%3E%3C/svg%3E') no-repeat right 12px center;-webkit-appearance:none;"></select>
+  </div>
+  <div id="trend-content"><p style="font-size:12px;color:var(--light);">Select a player to view their PI trends.</p></div>
+</div>
+
+</div><!-- end .content -->
+
+<!-- QUICK LOG MODAL -->
+<div class="ql-overlay" id="ql-overlay" onclick="if(event.target===this)closeQuickLog()">
+  <div class="ql-sheet">
+    <div class="ql-header"><h2>⚡ Quick Log PI Score</h2><button class="ql-close" onclick="closeQuickLog()">✕</button></div>
+    <div class="ql-fr"><label>Group</label>
+      <select id="ql-group" onchange="qlGroupChanged()">
+        <option value="">— Select group —</option>
+        <option value="thu">Thursday 10am</option>
+        <option value="tue">Tuesday 2:30pm</option>
+      </select>
+    </div>
+    <div class="ql-fr"><label>Player</label><select id="ql-player" disabled onchange="qlPlayerChanged()"><option value="">— Select group first —</option></select></div>
+    <div class="ql-fr"><label>Category</label><select id="ql-cat" disabled><option value="">— Select player first —</option></select></div>
+    <div class="ql-fr" id="ql-score-wrap" style="display:none;"><label>PI Score (/100)</label><input type="number" id="ql-score" min="0" max="100" placeholder="e.g. 68"></div>
+    <div class="ql-fr" id="ql-date-wrap" style="display:none;"><label>Date</label><input type="date" id="ql-date"></div>
+    <button class="ql-log-btn" id="ql-log-btn" onclick="qlSubmit()" disabled>Log Entry</button>
+    <div class="ql-success" id="ql-success"><span style="font-size:20px;">✅</span><span id="ql-success-msg">Entry logged!</span></div>
+  </div>
+</div>
+
+<script>
+const SURL='https://dejmkfbzbqtvqgxtwipv.supabase.co';
+const SKEY='sb_publishable_zLIVnPYNxlyyAsYrkq9LJg_ztRZaJFp';
+const sb=supabase.createClient(SURL,SKEY);
+
+const PI_CATS=[
+  {key:'pitching',label:'Pitching',icon:'🎯'},
+  {key:'chipping',label:'Chipping',icon:'🏌️'},
+  {key:'bunkers',label:'Bunkers',icon:'🏖️'},
+  {key:'putting',label:'Putting',icon:'🕳️'},
+  {key:'mixed',label:'Mixed',icon:'🔀'}
+];
+
+const WEEK_DEFAULTS=[
+  {num:1,theme:'Baseline & Diagnosis',badge:'Benchmark Week',badgeClass:'w1',focus:'Find exactly where scoring is leaking. Complete benchmark drills across all 5 PI categories to establish your Week 1 Performance Index score.',oncourse:'No on-course this week — data collection session only.',practice:'Review your PI results. Begin short game practice using your assigned program in the Short Game Practice Hub.'},
+  {num:2,theme:'Foundation',badge:'Week 2',badgeClass:'',focus:'Targeted work on the gaps identified in Week 1. Short game fundamentals across fairway, rough and bunker. Putting start line, speed control and make zone from 3–8ft.',oncourse:'3–4 holes focused on shot selection and execution from inside 50m.',practice:'Assigned practice program based on your Week 1 data. Approx 2–3 sessions, 30–45 mins each.'},
+  {num:3,theme:'Development',badge:'Week 3',badgeClass:'',focus:'Expand range and build consistency across a wider variety of distances and lies. Introduce scoring formats with consequence. Review between-session practice app data.',oncourse:'4–5 holes tracking up and down percentage and putts per hole.',practice:'Continue assigned program. Note what is trending in the practice app and bring observations to the session.'},
+  {num:4,theme:'Pressure',badge:'Week 4',badgeClass:'',focus:'Pressure inoculation — the most important step before tournament play. Elimination drills, ladder formats and negative scoring formats.',oncourse:'On-course with points scoring — every short game shot and every putt has consequence.',practice:'Practice under pressure formats. Use the competition drills section of the practice app.'},
+  {num:5,theme:'Scoring Simulation',badge:'Week 5',badgeClass:'',focus:'Full combine drills replicating the variety and decision making of a real round. Mixed categories, varied distances, different lies. Review trend lines from the app.',oncourse:'6–9 holes with a scoring focus — track every short game shot and putt.',practice:'Full combine practice sessions. Compare your current PI scores to your Week 1 baseline.'},
+  {num:6,theme:'Reassessment & Tournament Prep',badge:'Final Week',badgeClass:'w6',focus:'Repeat the Week 1 benchmark drills. Before and after Performance Index comparison. Identify the improvement story from the 6 weeks.',oncourse:'Final on-course session — play with a purpose and track your scoring stats.',practice:'Personal tournament week protocol — what to practise, when to stop, and how to arrive at the first tee ready to perform.'}
+];
+
+var allPlayers=[];
+var piLogs={};
+var currentPlannerGroup='thu';
+
+function today(){return new Date().toISOString().slice(0,10);}
+function formatDate(d){if(!d)return'';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+
+function showTab(id,el){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(el)el.classList.add('active');
+  if(id==='overview')renderOverview();
+  if(id==='dashboard')renderDashboard();
+  if(id==='trends')populateTrendDropdown();
+}
+
+// DB
+async function dbGet(key){try{const{data,error}=await sb.from('jdp_data').select('value').eq('key',key).limit(1).maybeSingle();if(error||!data)return null;return JSON.parse(data.value);}catch(e){return null;}}
+async function dbSet(key,val){try{await sb.from('jdp_data').upsert({key,value:JSON.stringify(val)},{onConflict:'key'});showSaved('✓ Synced');}catch(e){showSaved('⚠️ Save failed',true);}}
+function showSaved(msg,err){var dot=document.getElementById('sync-dot'),txt=document.getElementById('sync-msg');dot.className='sync-dot'+(err?' off':'');txt.textContent=msg;setTimeout(()=>{dot.className='sync-dot';txt.textContent='Live sync on';},2500);}
+function flash(id){var el=document.getElementById(id);if(el){el.style.display='block';setTimeout(()=>el.style.display='none',3000);}}
+
+// PI score colour
+function piColor(s){if(s===null||s===undefined||s==='')return'';s=parseInt(s);if(s>=80)return'pi-band-great';if(s>=60)return'pi-band-good';if(s>=40)return'pi-band-mid';return'pi-band-low';}
+function piColorHex(s){s=parseInt(s);if(s>=80)return'#1a4a7a';if(s>=60)return'#1a6b3c';if(s>=40)return'#856404';return'#c0392b';}
+
+// ── PROGRAM TAB ──
+var programData={};
+async function loadProgram(){programData=await dbGet('score_better_program')||{};buildProgramWeeks();}
+function buildProgramWeeks(){
+  var el=document.getElementById('program-weeks');el.innerHTML='';
+  WEEK_DEFAULTS.forEach(function(w){
+    var saved=programData[w.num]||{};
+    var focus=saved.focus!==undefined?saved.focus:w.focus;
+    var oncourse=saved.oncourse!==undefined?saved.oncourse:w.oncourse;
+    var practice=saved.practice!==undefined?saved.practice:w.practice;
+    var card=document.createElement('div');card.className='week-card';
+    card.innerHTML='<div class="week-card-header '+w.badgeClass+'" onclick="toggleWeek('+w.num+')">'
+      +'<h3>Week '+w.num+' — '+w.theme+'</h3>'
+      +'<div style="display:flex;align-items:center;gap:8px;">'
+      +'<span class="week-badge">'+w.badge+'</span>'
+      +'<span class="week-chev" id="wchev-'+w.num+'">▼</span>'
+      +'</div></div>'
+      +'<div class="week-card-body" id="wbody-'+w.num+'">'
+      +'<div class="week-section"><div class="week-section-label">Session Focus</div>'
+      +'<div class="week-cell" contenteditable="true" id="wfocus-'+w.num+'">'+focus+'</div></div>'
+      +'<div class="week-section"><div class="week-section-label">On-Course</div>'
+      +'<div class="week-cell" contenteditable="true" id="woncourse-'+w.num+'">'+oncourse+'</div></div>'
+      +'<div class="week-section"><div class="week-section-label">Between-Session Practice</div>'
+      +'<div class="week-cell" contenteditable="true" id="wpractice-'+w.num+'">'+practice+'</div></div>'
+      +'</div>';
+    el.appendChild(card);
+  });
+}
+function toggleWeek(n){
+  var body=document.getElementById('wbody-'+n),chev=document.getElementById('wchev-'+n);
+  var open=body.classList.toggle('open');if(chev)chev.classList.toggle('open',open);
+}
+function collectProgramData(){
+  var d={};
+  WEEK_DEFAULTS.forEach(function(w){
+    d[w.num]={
+      focus:document.getElementById('wfocus-'+w.num)?document.getElementById('wfocus-'+w.num).innerText:'',
+      oncourse:document.getElementById('woncourse-'+w.num)?document.getElementById('woncourse-'+w.num).innerText:'',
+      practice:document.getElementById('wpractice-'+w.num)?document.getElementById('wpractice-'+w.num).innerText:''
+    };
+  });
+  return d;
+}
+async function saveProgram(){programData=collectProgramData();await dbSet('score_better_program',programData);flash('program-flash');}
+
+// ── PLANNER ──
+const PLANNER_DEFAULTS=[
+  {focus:'Baseline & Diagnosis',activities:'PI benchmark drills — all 5 categories',notes:''},
+  {focus:'Foundation',activities:'Targeted short game work · Putting make zone · On-course W2',notes:''},
+  {focus:'Development',activities:'Variable distances & lies · Scoring formats · On-course W3',notes:''},
+  {focus:'Pressure',activities:'Elimination drills · Ladder formats · On-course W4',notes:''},
+  {focus:'Scoring Simulation',activities:'Full combine drills · Trend line review · On-course W5',notes:''},
+  {focus:'Reassessment & Tournament Prep',activities:'Repeat Week 1 benchmarks · PI comparison · Tournament protocol',notes:''}
+];
+var plannerData={thu:null,tue:null};
+async function loadPlanner(){
+  plannerData.thu=await dbGet('score_better_planner_thu')||PLANNER_DEFAULTS.map(r=>Object.assign({},r));
+  plannerData.tue=await dbGet('score_better_planner_tue')||PLANNER_DEFAULTS.map(r=>Object.assign({},r));
+  buildPlannerTable('thu');buildPlannerTable('tue');
+  var pd=await dbGet('score_better_planner_details')||{};
+  if(pd['prog-start-thu'])document.getElementById('prog-start-thu').value=pd['prog-start-thu'];
+  if(pd['prog-start-tue'])document.getElementById('prog-start-tue').value=pd['prog-start-tue'];
+  if(pd['prog-notes'])document.getElementById('prog-notes').value=pd['prog-notes'];
+}
+function buildPlannerTable(grp){
+  var tc=grp==='thu'?{bg:'#eef8f2',col:'var(--green)'}:{bg:'#eef3fa',col:'#1a4a7a'};
+  var tb=document.getElementById('planner-body-'+grp);tb.innerHTML='';
+  plannerData[grp].forEach(function(row,i){
+    var tr=document.createElement('tr');
+    var wkTd=document.createElement('td');wkTd.className='wk-num';wkTd.style.background=tc.bg;wkTd.textContent='W'+(i+1);tr.appendChild(wkTd);
+    ['focus','activities','notes'].forEach(function(col){
+      var td=document.createElement('td');td.style.background=tc.bg;
+      var div=document.createElement('div');div.contentEditable=true;div.textContent=row[col]||'';
+      div.style.cssText='outline:none;min-height:20px;padding:2px 4px;border-radius:4px;';
+      div.addEventListener('focus',()=>{div.style.background='rgba(26,107,60,.1)';div.style.boxShadow='0 0 0 2px rgba(26,107,60,.25)';});
+      div.addEventListener('blur',()=>{div.style.background='';div.style.boxShadow='';});
+      var deb;div.addEventListener('input',function(){clearTimeout(deb);deb=setTimeout(async function(){plannerData[grp][i][col]=div.textContent;await dbSet('score_better_planner_'+grp,plannerData[grp]);},800);});
+      td.appendChild(div);tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+}
+function showPlannerGroup(grp){
+  currentPlannerGroup=grp;
+  ['thu','tue'].forEach(function(g){
+    document.getElementById('planner-'+g).style.display=g===grp?'block':'none';
+    var btn=document.getElementById('ptab-'+g);
+    if(g===grp){btn.style.background=g==='thu'?'#eef8f2':'#eef3fa';btn.style.color=g==='thu'?'var(--green)':'#1a4a7a';btn.style.borderBottom='3px solid '+(g==='thu'?'var(--green)':'#1a4a7a');}
+    else{btn.style.background='#f0f0f0';btn.style.color='#999';btn.style.borderBottom='3px solid transparent';}
+  });
+}
+async function savePlannerDetails(){
+  var pd={'prog-start-thu':document.getElementById('prog-start-thu').value,'prog-start-tue':document.getElementById('prog-start-tue').value,'prog-notes':document.getElementById('prog-notes').value};
+  await dbSet('score_better_planner_details',pd);flash('planner-flash');renderDashboard();
+}
+
+// ── PLAYERS ──
+async function loadAllPlayers(){allPlayers=await dbGet('score_better_profiles')||[];populatePlayerDropdowns();renderPlayerList();}
+function groupLabel(g){return g==='thu'?'Thursday 10am':'Tuesday 2:30pm';}
+function groupClass(g){return g==='thu'?'thu':'tue';}
+function populatePlayerDropdowns(){
+  [document.getElementById('player-select'),document.getElementById('trend-player-sel')].forEach(function(sel){
+    if(!sel)return;var cur=sel.value;
+    sel.innerHTML='<option value="">— Select a player —</option>';
+    [{g:'thu',label:'Thursday 10am'},{g:'tue',label:'Tuesday 2:30pm'}].forEach(function(grp){
+      var pl=allPlayers.filter(p=>p.group===grp.g);
+      if(pl.length){var og=document.createElement('optgroup');og.label=grp.label;pl.forEach(function(p){var o=document.createElement('option');o.value=p.id;o.textContent=p.name;if(String(p.id)===String(cur))o.selected=true;og.appendChild(o);});sel.appendChild(og);}
+    });
+  });
+}
+function newPlayerForm(){
+  document.getElementById('form-title').textContent='➕ New Player Profile';
+  document.getElementById('player-select').value='';
+  document.getElementById('p-id').value='';
+  document.getElementById('p-name').value='';
+  document.getElementById('p-hcp').value='';
+  document.getElementById('p-goal').value='';
+  document.getElementById('p-group').value='thu';
+  piLogs={};buildPICats();buildOCNotes();
+  ['pi-body','oc-body'].forEach(function(id){var b=document.getElementById(id),c=document.getElementById(id+'-chev');if(b)b.classList.remove('open');if(c)c.classList.remove('open');});
+  updatePISummary();updateOCSummary();
+}
+function loadPlayerProfile(){
+  var id=document.getElementById('player-select').value;if(!id){newPlayerForm();return;}
+  var p=allPlayers.find(x=>String(x.id)===String(id));if(!p)return;
+  document.getElementById('form-title').textContent='✏️ Update Profile';
+  document.getElementById('p-id').value=p.id;
+  document.getElementById('p-name').value=p.name||'';
+  document.getElementById('p-hcp').value=p.hcp||'';
+  document.getElementById('p-goal').value=p.goal||'';
+  document.getElementById('p-group').value=p.group||'thu';
+  piLogs=JSON.parse(JSON.stringify(p.piLogs||{}));
+  buildPICats();buildOCNotes(p.ocNotes||{});
+  updatePISummary();updateOCSummary(p.ocNotes||{});
+}
+async function savePlayer(){
+  var name=document.getElementById('p-name').value.trim();if(!name){alert('Please enter a player name.');return;}
+  var id=document.getElementById('p-id').value;
+  var oc={};for(var w=2;w<=6;w++){var el=document.getElementById('oc-w'+w);if(el)oc[w]=el.value;}
+  var profile={id:id?Number(id):Date.now(),name,hcp:document.getElementById('p-hcp').value,goal:document.getElementById('p-goal').value,group:document.getElementById('p-group').value,piLogs:JSON.parse(JSON.stringify(piLogs)),ocNotes:oc};
+  if(id){var idx=allPlayers.findIndex(x=>String(x.id)===String(id));if(idx>=0)allPlayers[idx]=profile;else allPlayers.push(profile);}
+  else allPlayers.push(profile);
+  await dbSet('score_better_profiles',allPlayers);
+  flash('player-flash');await loadAllPlayers();
+  document.getElementById('player-select').value=profile.id;
+  document.getElementById('p-id').value=profile.id;
+  document.getElementById('form-title').textContent='✏️ Update Profile';
+  updatePISummary();updateOCSummary(oc);
+}
+async function deletePlayer(id,e){e.stopPropagation();if(!confirm('Delete this player? This cannot be undone.'))return;allPlayers=allPlayers.filter(p=>String(p.id)!==String(id));await dbSet('score_better_profiles',allPlayers);await loadAllPlayers();newPlayerForm();}
+function renderPlayerList(){
+  var list=document.getElementById('player-list');var count=document.getElementById('player-count');
+  count.textContent=allPlayers.length?'('+allPlayers.length+')':'';
+  if(!allPlayers.length){list.innerHTML='<p style="font-size:12px;color:var(--light);">No players added yet.</p>';return;}
+  list.innerHTML='';
+  [{g:'thu'},{g:'tue'}].forEach(function(grp){
+    var pl=allPlayers.filter(p=>p.group===grp.g);if(!pl.length)return;
+    var hdr=document.createElement('div');hdr.style.cssText='font-size:11px;font-weight:800;color:'+(grp.g==='thu'?'var(--green)':'#1a4a7a')+';margin:12px 0 6px;';hdr.textContent=groupLabel(grp.g);list.appendChild(hdr);
+    pl.forEach(function(p){
+      var gc=groupClass(p.group);
+      var allScores=[];PI_CATS.forEach(function(cat){var logs=p.piLogs&&p.piLogs[cat.key]?p.piLogs[cat.key]:[];if(logs.length){var lat=logs[logs.length-1];if(lat.score!==null&&lat.score!==undefined)allScores.push(lat.score);}});
+      var avgStr=allScores.length?'PI avg: '+(allScores.reduce((a,b)=>a+b,0)/allScores.length).toFixed(0)+'/100':'No PI logged';
+      var item=document.createElement('div');item.className='player-item';
+      item.onclick=function(){document.getElementById('player-select').value=p.id;loadPlayerProfile();showTab('players',document.querySelectorAll('.tab')[3]);window.scrollTo({top:0,behavior:'smooth'});};
+      item.innerHTML='<div class="pav '+gc+'">⛳</div><div class="pinfo"><h4>'+p.name+'</h4><p>'+groupLabel(p.group)+' · HCP: '+(p.hcp||'—')+' · '+avgStr+'</p></div><span class="badge '+gc+'">'+groupLabel(p.group).split(' ')[0]+'</span><span class="pdel" onclick="deletePlayer('+p.id+',event)" title="Delete">✕</span>';
+      list.appendChild(item);
+    });
+  });
+}
+
+// ── PI CATEGORIES ──
+function buildPICats(){
+  var el=document.getElementById('pi-cats');el.innerHTML='';
+  PI_CATS.forEach(function(cat){
+    var logs=piLogs[cat.key]||[];
+    var sorted=logs.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+    var latest=sorted.length?sorted[sorted.length-1]:null;
+    var baseline=sorted.length?sorted[0]:null;
+    var deltaHtml='';
+    if(baseline&&latest&&baseline!==latest){var diff=latest.score-baseline.score;if(diff>0)deltaHtml='<span class="pi-delta up">▲ +'+diff+'</span>';else if(diff<0)deltaHtml='<span class="pi-delta down">▼ '+diff+'</span>';else deltaHtml='<span class="pi-delta flat">— No change</span>';}
+    var currentHtml='<span style="font-size:11px;color:var(--light);">No entries yet</span>';
+    if(latest&&latest.score!==null&&latest.score!==undefined){var cls=piColor(latest.score);currentHtml='<span class="pi-score-badge '+cls+'">'+latest.score+'/100</span>'+(deltaHtml?' '+deltaHtml:'')+(baseline&&baseline!==latest?'<span style="font-size:10px;color:var(--light);margin-left:4px;">Base: '+baseline.score+'</span>':'');}
+    var card=document.createElement('div');card.className='pi-cat-card';
+    card.innerHTML='<div class="pi-cat-header"><div class="pi-cat-name">'+cat.icon+' '+cat.label+'</div><div class="pi-current">'+currentHtml+'</div></div>'
+      +'<div class="pi-entry-area">'
+      +'<div class="pi-entry-row">'
+      +'<div class="fr"><label>PI Score /100</label><input type="number" id="pi-v-'+cat.key+'" min="0" max="100" placeholder="0–100" style="font-size:16px;padding:8px 10px;"></div>'
+      +'<div class="fr"><label>Date</label><input type="date" id="pi-d-'+cat.key+'" value="'+today()+'" style="font-size:13px;padding:8px 10px;"></div>'
+      +'<div style="display:flex;align-items:flex-end;"><button class="btn btn-g" onclick="logPI(\''+cat.key+'\')" style="font-size:12px;padding:9px 14px;white-space:nowrap;">+ Log</button></div>'
+      +'</div>'
+      +'<div class="pi-log" id="pi-log-'+cat.key+'"></div>'
+      +'</div>';
+    el.appendChild(card);
+    renderPILog(cat.key);
+  });
+}
+function logPI(catKey){
+  var v=document.getElementById('pi-v-'+catKey).value;
+  var d=document.getElementById('pi-d-'+catKey).value||today();
+  if(v===''||v===null){alert('Please enter a PI score.');return;}
+  var score=parseInt(v);if(isNaN(score)||score<0||score>100){alert('PI score must be between 0 and 100.');return;}
+  if(!piLogs[catKey])piLogs[catKey]=[];
+  piLogs[catKey].push({id:Date.now(),date:d,score:score});
+  document.getElementById('pi-v-'+catKey).value='';
+  document.getElementById('pi-d-'+catKey).value=today();
+  buildPICats();updatePISummary();
+}
+function deletePIEntry(catKey,entryId){
+  if(!confirm('Delete this entry?'))return;
+  piLogs[catKey]=(piLogs[catKey]||[]).filter(e=>e.id!==entryId);
+  buildPICats();updatePISummary();
+}
+function renderPILog(catKey){
+  var el=document.getElementById('pi-log-'+catKey);if(!el)return;
+  var logs=(piLogs[catKey]||[]).slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).reverse();
+  if(!logs.length){el.innerHTML='<p class="pi-no-entries">No entries yet.</p>';return;}
+  var html=logs.slice(0,5).map(function(e,i){
+    var isBase=i===logs.length-1&&logs.length>1;
+    var cls=piColor(e.score);
+    return'<div class="pi-log-row"><span style="color:var(--light);">'+formatDate(e.date)+(i===0?' <span style="font-size:9px;font-weight:800;color:var(--green);">LATEST</span>':isBase?' <span style="font-size:9px;font-weight:800;color:#8b5e2a;">BASE</span>':'')+'</span><span class="pi-score-badge '+cls+'" style="font-size:11px;padding:2px 8px;">'+e.score+'/100</span><span class="pi-log-del" onclick="deletePIEntry(\''+catKey+'\','+e.id+')">✕</span></div>';
+  }).join('');
+  if(logs.length>5)html+='<p style="font-size:10px;color:var(--light);padding:4px 2px;">+ '+(logs.length-5)+' earlier entries</p>';
+  // trend chart
+  var withScores=logs.slice().reverse().filter(e=>e.score!==null);
+  if(withScores.length>=2)html+=buildMiniTrendSVG(withScores);
+  el.innerHTML=html;
+}
+function buildMiniTrendSVG(pts){
+  var W=260,H=64,padL=28,padR=10,padT=8,padB=16;var cW=W-padL-padR,cH=H-padT-padB;
+  var scores=pts.map(p=>p.score);var minS=Math.max(0,Math.min(...scores)-10);var maxS=Math.min(100,Math.max(...scores)+10);var sRange=maxS-minS||1;var n=pts.length;
+  function xP(i){return padL+Math.round((i/(n-1))*cW);}
+  function yP(s){return padT+Math.round((1-(s-minS)/sRange)*cH);}
+  var avgS=scores.reduce((a,b)=>a+b,0)/scores.length;var col=piColorHex(avgS);
+  var fillCol=col+'30';
+  var area='M'+xP(0)+','+yP(scores[0])+' '+pts.map((p,i)=>'L'+xP(i)+','+yP(p.score)).slice(1).join(' ')+' L'+xP(n-1)+','+(padT+cH)+' L'+xP(0)+','+(padT+cH)+' Z';
+  var line='M'+pts.map((p,i)=>xP(i)+','+yP(p.score)).join(' L');
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;margin-top:6px;">';
+  [0,50,100].forEach(function(s){if(s>=minS&&s<=maxS){var y=yP(s);svg+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#f0f0f0" stroke-width="1"/><text x="'+(padL-4)+'" y="'+y+'" text-anchor="end" dominant-baseline="middle" font-size="8" font-family="Segoe UI,Arial,sans-serif" fill="#bbb">'+s+'</text>';}});
+  svg+='<path d="'+area+'" fill="'+fillCol+'"/>';
+  svg+='<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+  pts.forEach(function(p,i){svg+='<circle cx="'+xP(i)+'" cy="'+yP(p.score)+'" r="3.5" fill="'+col+'" stroke="white" stroke-width="1.5"/>';var parts=p.date.split('-');var lbl=parts.length===3?(months[parseInt(parts[1],10)-1]+' '+parts[2]):'';svg+='<text x="'+xP(i)+'" y="'+(H-2)+'" text-anchor="middle" font-size="7" font-family="Segoe UI,Arial,sans-serif" fill="#bbb">'+lbl+'</text>';});
+  svg+='</svg>';
+  return'<div style="background:#fafafa;border-radius:6px;padding:6px 8px 2px;margin-top:6px;border:1px solid #eee;"><div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#bbb;margin-bottom:2px;">PI Progress</div>'+svg+'</div>';
+}
+function updatePISummary(){
+  var el=document.getElementById('pi-summary');if(!el)return;
+  var allEntries=[];PI_CATS.forEach(function(cat){var logs=piLogs[cat.key]||[];if(logs.length){var latest=logs.slice().sort((a,b)=>a.date<b.date?-1:1)[logs.length-1];if(latest.score!==null&&latest.score!==undefined)allEntries.push(latest.score);}});
+  if(!allEntries.length){el.textContent='No entries yet';return;}
+  var avg=(allEntries.reduce((a,b)=>a+b,0)/allEntries.length).toFixed(0);el.textContent=allEntries.length+' of 5 categories logged · Avg PI: '+avg+'/100';
+}
+
+// ── ON-COURSE NOTES ──
+function buildOCNotes(saved){
+  var el=document.getElementById('oc-notes-fields');el.innerHTML='';
+  for(var w=2;w<=6;w++){
+    var row=document.createElement('div');row.className='oc-week-row';
+    row.innerHTML='<div class="oc-week-label">Week '+w+'</div><textarea class="oc-week-input" id="oc-w'+w+'" rows="2" placeholder="On-course observations for Week '+w+'…">'+(saved&&saved[w]?saved[w]:'')+'</textarea>';
+    el.appendChild(row);
+  }
+}
+function updateOCSummary(saved){
+  var el=document.getElementById('oc-summary');if(!el)return;
+  var hasNotes=false;if(saved){for(var w=2;w<=6;w++){if(saved[w]&&saved[w].trim()){hasNotes=true;break;}}}
+  else{for(var w=2;w<=6;w++){var e=document.getElementById('oc-w'+w);if(e&&e.value.trim()){hasNotes=true;break;}}}
+  el.textContent=hasNotes?'Notes saved':'No notes yet';
+}
+
+// ── COLLAPSIBLE SECTIONS ──
+function toggleSection(id){
+  var body=document.getElementById(id),chev=document.getElementById(id+'-chev');
+  var open=body.classList.toggle('open');if(chev)chev.classList.toggle('open',open);
+}
+
+// ── GROUP OVERVIEW ──
+function renderOverview(){
+  var el=document.getElementById('ov-content');el.innerHTML='';
+  [{g:'thu',label:'Thursday 10am',cls:'thu',col:'var(--green)'},{g:'tue',label:'Tuesday 2:30pm',cls:'tue',col:'#1a4a7a'}].forEach(function(grp){
+    var players=allPlayers.filter(p=>p.group===grp.g);
+    var card=document.createElement('div');card.className='ov-group-card';
+    var hdr=document.createElement('div');hdr.className='ov-group-header '+grp.cls;
+    hdr.onclick=function(){var b=card.querySelector('.ov-group-body');b.style.display=b.style.display==='block'?'none':'block';};
+    hdr.innerHTML='<div><div style="font-size:14px;font-weight:800;color:'+grp.col+';">⛳ '+grp.label+'</div><div style="font-size:11px;color:var(--mid);">'+players.length+' player'+(players.length!==1?'s':'')+'</div></div>';
+    var body=document.createElement('div');body.className='ov-group-body';body.style.display='block';
+    if(!players.length){body.innerHTML='<p style="font-size:12px;color:var(--light);">No players in this group.</p>';}
+    else{
+      players.forEach(function(p){
+        var row=document.createElement('div');row.className='ov-player-row';
+        var pills='';PI_CATS.forEach(function(cat){
+          var logs=p.piLogs&&p.piLogs[cat.key]?p.piLogs[cat.key]:[];
+          var sorted=logs.slice().sort((a,b)=>a.date<b.date?-1:1);
+          var latest=sorted.length?sorted[sorted.length-1]:null;
+          var baseline=sorted.length>1?sorted[0]:null;
+          var scoreStr=latest&&latest.score!==null?latest.score+'/100':'—';
+          var deltaStr='';if(baseline&&latest&&baseline!==latest){var d=latest.score-baseline.score;deltaStr=d>0?' <span style="color:var(--green);font-size:9px;">▲'+d+'</span>':d<0?' <span style="color:#c0392b;font-size:9px;">▼'+Math.abs(d)+'</span>':'';}
+          var bg=latest&&latest.score!==null?(piColor(latest.score).replace('pi-band-low','#fde8e8').replace('pi-band-mid','#fff3cd').replace('pi-band-good','#eef8f2').replace('pi-band-great','#d0e8ff')):'#eee';
+          var tc=latest&&latest.score!==null?(piColorHex(latest.score)):'#999';
+          pills+='<span class="ov-pi-pill" style="background:'+bg+';color:'+tc+';">'+cat.icon+' '+cat.label+': '+scoreStr+deltaStr+'</span>';
+        });
+        row.innerHTML='<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:4px;">'+p.name+' <span style="font-size:10px;color:var(--mid);">HCP '+( p.hcp||'—')+'</span></div><div class="ov-pi-pills">'+pills+'</div></div>';
+        body.appendChild(row);
+      });
+      // group averages
+      var avgRow=document.createElement('div');avgRow.style.cssText='padding:10px 12px;background:#f4f6f8;border-radius:8px;border:1px solid #eee;margin-top:8px;';
+      var avgHtml='<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mid);margin-bottom:6px;">Group averages</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
+      PI_CATS.forEach(function(cat){
+        var vals=[];players.forEach(function(p){var logs=p.piLogs&&p.piLogs[cat.key]?p.piLogs[cat.key]:[];var sorted=logs.slice().sort((a,b)=>a.date<b.date?-1:1);var lat=sorted.length?sorted[sorted.length-1]:null;if(lat&&lat.score!==null)vals.push(lat.score);});
+        var avgStr=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(0)+'/100':'—';
+        var bg=vals.length?piColor((vals.reduce((a,b)=>a+b,0)/vals.length)).replace('pi-band-low','#fde8e8').replace('pi-band-mid','#fff3cd').replace('pi-band-good','#eef8f2').replace('pi-band-great','#d0e8ff'):'#eee';
+        var tc=vals.length?piColorHex(vals.reduce((a,b)=>a+b,0)/vals.length):'#999';
+        avgHtml+='<span style="font-size:10px;font-weight:700;background:'+bg+';color:'+tc+';padding:3px 9px;border-radius:10px;">'+cat.icon+' '+cat.label+': '+avgStr+'</span>';
+      });
+      avgHtml+='</div>';avgRow.innerHTML=avgHtml;body.appendChild(avgRow);
+    }
+    card.appendChild(hdr);card.appendChild(body);el.appendChild(card);
+  });
+}
+
+// ── PI TRENDS ──
+function populateTrendDropdown(){populatePlayerDropdowns();}
+function renderTrends(){
+  var id=document.getElementById('trend-player-sel').value;
+  var el=document.getElementById('trend-content');
+  if(!id){el.innerHTML='<p style="font-size:12px;color:var(--light);">Select a player to view their PI trends.</p>';return;}
+  var p=allPlayers.find(x=>String(x.id)===String(id));if(!p){el.innerHTML='';return;}
+  el.innerHTML='';
+  var hasAny=false;
+  PI_CATS.forEach(function(cat){
+    var logs=p.piLogs&&p.piLogs[cat.key]?p.piLogs[cat.key]:[];
+    var sorted=logs.slice().sort((a,b)=>a.date<b.date?-1:1);
+    var card=document.createElement('div');card.className='trend-card';
+    var latest=sorted.length?sorted[sorted.length-1]:null;
+    var baseline=sorted.length?sorted[0]:null;
+    var deltaHtml='';
+    if(baseline&&latest&&sorted.length>1){var diff=latest.score-baseline.score;if(diff>0)deltaHtml=' <span class="pi-delta up" style="font-size:10px;">▲ +'+diff+' from baseline</span>';else if(diff<0)deltaHtml=' <span class="pi-delta down" style="font-size:10px;">▼ '+Math.abs(diff)+' from baseline</span>';else deltaHtml=' <span class="pi-delta flat" style="font-size:10px;">— No change from baseline</span>';}
+    var latestHtml=latest?'<span class="pi-score-badge '+piColor(latest.score)+'" style="font-size:11px;">'+latest.score+'/100</span>'+deltaHtml:'<span style="font-size:11px;color:var(--light);">No entries</span>';
+    card.innerHTML='<h3>'+cat.icon+' '+cat.label+' <span style="font-size:11px;font-weight:400;color:var(--mid);">'+sorted.length+' entr'+(sorted.length!==1?'ies':'y')+'</span> '+latestHtml+'</h3>';
+    if(sorted.length>=2){
+      var chartDiv=document.createElement('div');chartDiv.className='trend-chart-wrap';chartDiv.innerHTML=buildMiniTrendSVG(sorted);card.appendChild(chartDiv);hasAny=true;
+    } else if(sorted.length===1){
+      card.innerHTML+='<p style="font-size:11px;color:var(--light);">Log a second entry to see a trend line. Baseline: '+sorted[0].score+'/100 ('+formatDate(sorted[0].date)+')</p>';
+    } else {
+      card.innerHTML+='<p style="font-size:11px;color:var(--light);">No entries logged for this category.</p>';
+    }
+    // log table
+    if(sorted.length){
+      var tbl='<div style="margin-top:10px;"><div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mid);margin-bottom:6px;">All entries</div>';
+      sorted.slice().reverse().forEach(function(e,i){
+        var isBase=i===sorted.length-1;
+        var cls=piColor(e.score);
+        tbl+='<div class="pi-log-row"><span style="color:var(--light);">'+formatDate(e.date)+(i===0?' <span style="font-size:9px;font-weight:800;color:var(--green);">LATEST</span>':isBase&&sorted.length>1?' <span style="font-size:9px;font-weight:800;color:#8b5e2a;">BASELINE</span>':'')+'</span><span class="pi-score-badge '+cls+'" style="font-size:11px;padding:2px 8px;">'+e.score+'/100</span></div>';
+      });
+      tbl+='</div>';card.innerHTML+=tbl;
+    }
+    el.appendChild(card);
+  });
+  if(!hasAny&&!allPlayers.find(x=>String(x.id)===String(id)).piLogs){el.innerHTML+='<p style="font-size:12px;color:var(--light);">No PI data logged yet for this player.</p>';}
+}
+
+// ── DASHBOARD ──
+function renderDashboard(){renderDashWeek();renderDashAttention();}
+function renderDashWeek(){
+  var titleEl=document.getElementById('dash-week-title');var contentEl=document.getElementById('dash-week-content');
+  // check both groups
+  var pd=null;var groups=[];
+  var thuStart=document.getElementById('prog-start-thu')?document.getElementById('prog-start-thu').value:'';
+  var tueStart=document.getElementById('prog-start-tue')?document.getElementById('prog-start-tue').value:'';
+  var now=new Date();now.setHours(0,0,0,0);var html='';
+  var built=false;
+  [{label:'Thursday 10am',start:thuStart},{label:'Tuesday 2:30pm',start:tueStart}].forEach(function(grp){
+    if(!grp.start)return;
+    var s=new Date(grp.start);s.setHours(0,0,0,0);
+    var diff=Math.floor((now-s)/(1000*60*60*24));
+    var wk=Math.floor(diff/7)+1;
+    if(wk<1)wk=1;if(wk>6)wk=6;
+    var w=WEEK_DEFAULTS[wk-1];
+    html+='<div style="padding:8px 0;border-bottom:1px solid #f0f0f0;"><div style="font-size:11px;font-weight:800;color:var(--green);">'+grp.label+'</div><div style="font-size:13px;font-weight:800;color:var(--dark);margin-top:2px;">Week '+wk+' — '+w.theme+'</div></div>';
+    built=true;
+  });
+  if(!built){titleEl.textContent='📅 Program Week';contentEl.innerHTML='<p style="font-size:12px;color:var(--light);">Set start dates in the Planner tab to track current week.</p>';return;}
+  titleEl.textContent='📅 Current Program Week';contentEl.innerHTML=html+'<p style="font-size:10px;color:var(--light);margin-top:8px;">Edit start dates in the Planner tab.</p>';
+}
+function renderDashAttention(){
+  var el=document.getElementById('dash-attention');
+  var noBaseline=allPlayers.filter(function(p){return PI_CATS.some(function(cat){var logs=p.piLogs&&p.piLogs[cat.key]?p.piLogs[cat.key]:[];return!logs.length;});});
+  if(!noBaseline.length){el.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#eef8f2;border-radius:8px;"><span style="font-size:16px;">✅</span><span style="font-size:12px;color:var(--green);font-weight:700;">All players have PI entries logged across all categories.</span></div>';return;}
+  var html='<p style="font-size:11px;color:var(--mid);margin-bottom:8px;">'+noBaseline.length+' player'+(noBaseline.length>1?'s have':' has')+' missing PI categories:</p>';
+  noBaseline.forEach(function(p){
+    var missing=PI_CATS.filter(cat=>{var logs=p.piLogs&&p.piLogs[cat.key]?p.piLogs[cat.key]:[];return!logs.length;}).map(c=>c.label).join(', ');
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#fafafa;border-radius:8px;border:1px solid #eee;margin-bottom:6px;cursor:pointer;" onclick="document.getElementById(\'player-select\').value=\''+p.id+'\';loadPlayerProfile();showTab(\'players\',document.querySelectorAll(\'.tab\')[3]);"><div><div style="font-size:12px;font-weight:700;">'+p.name+'</div><div style="font-size:10px;color:var(--mid);">Missing: '+missing+'</div></div><span style="font-size:10px;font-weight:700;color:var(--green);">Tap to log →</span></div>';
+  });
+  el.innerHTML=html;
+}
+
+// ── QUICK LOG ──
+function openQuickLog(){document.getElementById('ql-overlay').classList.add('open');document.getElementById('ql-group').value='';qlResetPlayer();document.getElementById('ql-date').value=today();document.getElementById('ql-success').classList.remove('visible');}
+function closeQuickLog(){document.getElementById('ql-overlay').classList.remove('open');}
+function qlResetPlayer(){var sel=document.getElementById('ql-player');sel.innerHTML='<option value="">— Select group first —</option>';sel.disabled=true;qlResetCat();}
+function qlResetCat(){var sel=document.getElementById('ql-cat');sel.innerHTML='<option value="">— Select player first —</option>';sel.disabled=true;document.getElementById('ql-score-wrap').style.display='none';document.getElementById('ql-date-wrap').style.display='none';document.getElementById('ql-log-btn').disabled=true;document.getElementById('ql-success').classList.remove('visible');}
+function qlGroupChanged(){var g=document.getElementById('ql-group').value;qlResetPlayer();if(!g)return;var pl=allPlayers.filter(p=>p.group===g);var sel=document.getElementById('ql-player');sel.innerHTML='<option value="">— Select player —</option>';pl.forEach(function(p){var o=document.createElement('option');o.value=p.id;o.textContent=p.name;sel.appendChild(o);});sel.disabled=false;}
+function qlPlayerChanged(){qlResetCat();if(!document.getElementById('ql-player').value)return;var sel=document.getElementById('ql-cat');sel.innerHTML='<option value="">— Select category —</option>';PI_CATS.forEach(function(cat){var o=document.createElement('option');o.value=cat.key;o.textContent=cat.icon+' '+cat.label;sel.appendChild(o);});sel.disabled=false;sel.onchange=function(){if(sel.value){document.getElementById('ql-score-wrap').style.display='block';document.getElementById('ql-date-wrap').style.display='block';document.getElementById('ql-log-btn').disabled=false;}else{document.getElementById('ql-score-wrap').style.display='none';document.getElementById('ql-log-btn').disabled=true;}};}
+async function qlSubmit(){
+  var pId=document.getElementById('ql-player').value;var catKey=document.getElementById('ql-cat').value;var score=parseInt(document.getElementById('ql-score').value);var date=document.getElementById('ql-date').value||today();
+  if(!pId||!catKey){alert('Select a player and category.');return;}
+  if(isNaN(score)||score<0||score>100){alert('PI score must be 0–100.');return;}
+  var btn=document.getElementById('ql-log-btn');btn.disabled=true;btn.textContent='Saving…';
+  var pIdx=allPlayers.findIndex(x=>String(x.id)===String(pId));if(pIdx<0){btn.disabled=false;btn.textContent='Log Entry';return;}
+  var p=allPlayers[pIdx];if(!p.piLogs)p.piLogs={};if(!p.piLogs[catKey])p.piLogs[catKey]=[];
+  p.piLogs[catKey].push({id:Date.now(),date,score});
+  await dbSet('score_better_profiles',allPlayers);
+  await loadAllPlayers();
+  btn.textContent='Log Entry';btn.disabled=false;
+  var cat=PI_CATS.find(c=>c.key===catKey);
+  document.getElementById('ql-success-msg').textContent='✓ Logged for '+p.name+' — '+cat.label+': '+score+'/100';
+  document.getElementById('ql-success').classList.add('visible');
+  document.getElementById('ql-score').value='';
+  document.getElementById('ql-cat').value='';
+  document.getElementById('ql-score-wrap').style.display='none';
+  document.getElementById('ql-date-wrap').style.display='none';
+  document.getElementById('ql-log-btn').disabled=true;
+  // refresh player profile if open
+  var curId=document.getElementById('p-id').value;
+  if(String(curId)===String(pId)){var upP=allPlayers.find(x=>String(x.id)===String(pId));if(upP){piLogs=JSON.parse(JSON.stringify(upP.piLogs||{}));buildPICats();updatePISummary();}}
+  renderDashboard();
+}
+
+// ── INIT ──
+async function init(){
+  try{
+    await sb.from('jdp_data').select('key').limit(1);
+    document.getElementById('sync-msg').textContent='Live sync on';
+    await Promise.all([loadProgram(),loadAllPlayers(),loadPlanner()]);
+    buildPICats();buildOCNotes();renderDashboard();
+  }catch(e){
+    document.getElementById('sync-dot').className='sync-dot off';
+    document.getElementById('sync-msg').textContent='Database error';
+    console.error(e);
+  }
+  document.getElementById('loading').style.display='none';
+}
+init();
+</script>
+</body>
+</html>
