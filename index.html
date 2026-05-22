@@ -170,6 +170,16 @@ table.planner tr:last-child td{border-bottom:none;}
 .ql-success.visible{display:flex;}
 @media(min-width:541px){.ql-overlay{align-items:center;}.ql-sheet{border-radius:20px;margin:16px;}}
 @media(max-width:600px){.g2{grid-template-columns:1fr;}}
+/* Groups Manager */
+.groups-list-item{background:#fafafa;border:1px solid #eee;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.groups-list-item-info{flex:1;min-width:0;}
+.groups-list-item-info h4{font-size:13px;font-weight:700;margin-bottom:2px;}
+.groups-list-item-info p{font-size:11px;color:var(--mid);}
+.groups-list-item-actions{display:flex;gap:6px;flex-shrink:0;}
+.btn-sm{display:inline-block;padding:7px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all .2s;}
+.btn-sm-edit{background:#eef8f2;color:var(--green);border:1px solid #a8d5b8;}.btn-sm-edit:hover{background:var(--green);color:white;}
+.btn-sm-del{background:#fde8e8;color:#c0392b;border:1px solid #f5a0a0;}.btn-sm-del:hover{background:#c0392b;color:white;}
+.group-color-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
 </style>
 </head>
 <body>
@@ -191,13 +201,14 @@ table.planner tr:last-child td{border-bottom:none;}
   <div class="tab" onclick="showTab('players',this)">👤 Players</div>
   <div class="tab" onclick="showTab('overview',this)">👥 Groups</div>
   <div class="tab" onclick="showTab('trends',this)">📊 PI Trends</div>
+  <div class="tab" onclick="showTab('settings',this)">⚙️ Settings</div>
 </div>
 <div class="content">
 
 <!-- DASHBOARD -->
 <div id="dashboard" class="panel active">
   <div class="stitle">🏠 Score Better <span>Dashboard</span></div>
-  <div class="sdesc">6-week short game & putting intensive · Thursdays 10am & Tuesdays 2:30pm</div>
+  <div class="sdesc">6-week short game & putting intensive</div>
   <div class="dash-grid">
     <button class="dash-btn" onclick="openQuickLog()"><span style="font-size:22px;">⚡</span>Quick Log</button>
     <button class="dash-btn blue" onclick="showTab('players',document.querySelectorAll('.tab')[3]);setTimeout(newPlayerForm,100)"><span style="font-size:22px;">➕</span>Add Player</button>
@@ -223,20 +234,13 @@ table.planner tr:last-child td{border-bottom:none;}
 <div id="planner" class="panel">
   <div class="stitle">🗓️ Session <span>Planner</span></div>
   <div class="sdesc">Week-by-week session plan for each group. Click any cell to edit.</div>
-  <div class="group-tabs">
-    <button class="group-tab" id="ptab-thu" onclick="showPlannerGroup('thu')" style="background:#eef8f2;color:var(--green);border-bottom:3px solid var(--green);">⛳ Thursday 10am</button>
-    <button class="group-tab" id="ptab-tue" onclick="showPlannerGroup('tue')" style="background:#f0f0f0;color:#999;border-bottom:3px solid transparent;">⛳ Tuesday 2:30pm</button>
-  </div>
-  <div id="planner-thu"><div class="card" style="padding:12px;"><div class="planner-wrap"><table class="planner"><thead><tr><th style="width:36px;">Wk</th><th style="background:#eef8f2;color:var(--green);width:130px;">Session Focus</th><th style="background:#eef8f2;color:var(--green);">Key Activities</th><th style="background:#eef8f2;color:var(--green);width:160px;">Notes</th></tr></thead><tbody id="planner-body-thu"></tbody></table></div></div></div>
-  <div id="planner-tue" style="display:none;"><div class="card" style="padding:12px;"><div class="planner-wrap"><table class="planner"><thead><tr><th style="width:36px;">Wk</th><th style="background:#eef3fa;color:#1a4a7a;width:130px;">Session Focus</th><th style="background:#eef3fa;color:#1a4a7a;">Key Activities</th><th style="background:#eef3fa;color:#1a4a7a;width:160px;">Notes</th></tr></thead><tbody id="planner-body-tue"></tbody></table></div></div></div>
+  <div id="planner-group-tabs" class="group-tabs"></div>
+  <div id="planner-group-tables"></div>
   <div class="div"></div>
   <div class="card gold">
     <h3>📌 Program Details</h3>
     <div class="g2">
-      <div>
-        <div class="fr"><label>Thursday Group Start Date</label><input type="date" id="prog-start-thu"></div>
-        <div class="fr"><label>Tuesday Group Start Date</label><input type="date" id="prog-start-tue"></div>
-      </div>
+      <div id="planner-start-fields"></div>
       <div><div class="fr"><label>Notes</label><textarea id="prog-notes" rows="4" placeholder="Program notes, venue details, etc."></textarea></div></div>
     </div>
     <div class="btn-row"><button class="btn btn-g" onclick="savePlannerDetails()">💾 Save Details</button></div>
@@ -262,7 +266,7 @@ table.planner tr:last-child td{border-bottom:none;}
           <div class="fr"><label>Player Name</label><input type="text" id="p-name" placeholder="First & last name"></div>
           <div class="fr"><label>Handicap</label><input type="text" id="p-hcp" placeholder="e.g. 14.2"></div>
           <div class="fr"><label>Group</label>
-            <select id="p-group"><option value="thu">Thursday 10am</option><option value="tue">Tuesday 2:30pm</option></select>
+            <select id="p-group"></select>
           </div>
         </div>
         <div><div class="fr"><label>Goal for the Program</label><textarea id="p-goal" rows="4" placeholder="What do they want to achieve?"></textarea></div></div>
@@ -327,6 +331,29 @@ table.planner tr:last-child td{border-bottom:none;}
   <div id="trend-content"><p style="font-size:12px;color:var(--light);">Select a player to view their PI trends.</p></div>
 </div>
 
+<!-- SETTINGS -->
+<div id="settings" class="panel">
+  <div class="stitle">⚙️ App <span>Settings</span></div>
+  <div class="sdesc">Manage coaching groups and app configuration.</div>
+  <div class="card green">
+    <h3>👥 Groups Manager</h3>
+    <p style="font-size:12px;color:var(--mid);margin-bottom:12px;">Create and manage your coaching groups. Groups appear in all dropdowns, the Planner, and the Group Overview.</p>
+    <div id="groups-list"></div>
+    <div class="div"></div>
+    <h3 id="group-form-title" style="margin-bottom:10px;">➕ Add New Group</h3>
+    <div class="g2">
+      <div class="fr"><label>Group Name</label><input type="text" id="grp-name" placeholder="e.g. Thursday"></div>
+      <div class="fr"><label>Session Time</label><input type="text" id="grp-time" placeholder="e.g. 10am"></div>
+    </div>
+    <input type="hidden" id="grp-edit-id">
+    <div class="btn-row">
+      <button class="btn btn-g" onclick="saveGroup()">💾 Save Group</button>
+      <button class="btn btn-o" id="grp-cancel-btn" style="display:none;" onclick="cancelGroupEdit()">✕ Cancel</button>
+    </div>
+    <div class="flash" id="groups-flash">✓ Saved!</div>
+  </div>
+</div>
+
 </div>
 
 <!-- QUICK LOG -->
@@ -336,8 +363,6 @@ table.planner tr:last-child td{border-bottom:none;}
     <div class="ql-fr"><label>Group</label>
       <select id="ql-group" onchange="qlGroupChanged()">
         <option value="">— Select group —</option>
-        <option value="thu">Thursday 10am</option>
-        <option value="tue">Tuesday 2:30pm</option>
       </select>
     </div>
     <div class="ql-fr"><label>Player</label><select id="ql-player" disabled onchange="qlPlayerChanged()"><option value="">— Select group first —</option></select></div>
@@ -419,6 +444,15 @@ function piColorHex(s){s=parseInt(s);if(s>=80)return'#1a4a7a';if(s>=60)return'#1
 
 var allPlayers=[];
 var drillLogs={};// keyed by drill key
+var allGroups=[];
+var plannerDetails={};
+const GROUP_COLORS=[
+  {bg:'#eef8f2',text:'var(--green)',border:'var(--green)',avatarBg:'#d4edda'},
+  {bg:'#eef3fa',text:'#1a4a7a',border:'#1a4a7a',avatarBg:'#d0e4f7'},
+  {bg:'#fff8ee',text:'#7a5200',border:'#c9a84c',avatarBg:'#fde8c0'},
+  {bg:'#f8eef9',text:'#6a2a7a',border:'#9b59b6',avatarBg:'#e8d0f0'},
+];
+function getGroupColor(groupId){var idx=allGroups.findIndex(g=>g.id===groupId);if(idx<0)idx=0;return GROUP_COLORS[idx%GROUP_COLORS.length];}
 
 function today(){return new Date().toISOString().slice(0,10);}
 function formatDate(d){if(!d)return'';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
@@ -473,59 +507,89 @@ const PLANNER_DEFAULTS=[
   {focus:'Scoring Simulation',activities:'Full combine drills · Trend line review · On-course W5',notes:''},
   {focus:'Reassessment & Tournament Prep',activities:'Repeat Week 1 benchmarks · PI comparison · Tournament protocol',notes:''}
 ];
-var plannerData={thu:null,tue:null};
+var plannerData={};
 async function loadPlanner(){
-  plannerData.thu=await dbGet('score_better_planner_thu')||PLANNER_DEFAULTS.map(r=>Object.assign({},r));
-  plannerData.tue=await dbGet('score_better_planner_tue')||PLANNER_DEFAULTS.map(r=>Object.assign({},r));
-  buildPlannerTable('thu');buildPlannerTable('tue');
-  var pd=await dbGet('score_better_planner_details')||{};
-  if(pd['prog-start-thu'])document.getElementById('prog-start-thu').value=pd['prog-start-thu'];
-  if(pd['prog-start-tue'])document.getElementById('prog-start-tue').value=pd['prog-start-tue'];
-  if(pd['prog-notes'])document.getElementById('prog-notes').value=pd['prog-notes'];
+  plannerData={};
+  for(var i=0;i<allGroups.length;i++){var grp=allGroups[i];plannerData[grp.id]=await dbGet('score_better_planner_'+grp.id)||PLANNER_DEFAULTS.map(r=>Object.assign({},r));}
+  buildPlannerTabs();
+  allGroups.forEach(function(grp){buildPlannerTable(grp.id);});
+  plannerDetails=await dbGet('score_better_planner_details')||{};
+  buildPlannerStartFields();
+  if(document.getElementById('prog-notes'))document.getElementById('prog-notes').value=plannerDetails['prog-notes']||'';
 }
-function buildPlannerTable(grp){
-  var tc=grp==='thu'?{bg:'#eef8f2',col:'var(--green)'}:{bg:'#eef3fa',col:'#1a4a7a'};
-  var tb=document.getElementById('planner-body-'+grp);tb.innerHTML='';
-  plannerData[grp].forEach(function(row,i){
+function buildPlannerTabs(){
+  var tabsEl=document.getElementById('planner-group-tabs');
+  var tablesEl=document.getElementById('planner-group-tables');
+  if(!tabsEl||!tablesEl)return;
+  tabsEl.innerHTML='';tablesEl.innerHTML='';
+  allGroups.forEach(function(grp){
+    var col=getGroupColor(grp.id);
+    var btn=document.createElement('button');btn.className='group-tab';btn.id='ptab-'+grp.id;btn.textContent='⛳ '+groupLabel(grp.id);btn.onclick=function(){showPlannerGroup(grp.id);};tabsEl.appendChild(btn);
+    var tableDiv=document.createElement('div');tableDiv.id='planner-'+grp.id;tableDiv.style.display='none';
+    tableDiv.innerHTML='<div class="card" style="padding:12px;"><div class="planner-wrap"><table class="planner"><thead><tr><th style="width:36px;">Wk</th><th style="background:'+col.bg+';color:'+col.text+';width:130px;">Session Focus</th><th style="background:'+col.bg+';color:'+col.text+';">Key Activities</th><th style="background:'+col.bg+';color:'+col.text+';width:160px;">Notes</th></tr></thead><tbody id="planner-body-'+grp.id+'"></tbody></table></div></div>';
+    tablesEl.appendChild(tableDiv);
+  });
+  if(allGroups.length)showPlannerGroup(allGroups[0].id);
+}
+function buildPlannerTable(groupId){
+  var col=getGroupColor(groupId);
+  var tb=document.getElementById('planner-body-'+groupId);if(!tb)return;
+  tb.innerHTML='';
+  var rows=plannerData[groupId]||PLANNER_DEFAULTS.map(r=>Object.assign({},r));
+  rows.forEach(function(row,i){
     var tr=document.createElement('tr');
-    var wkTd=document.createElement('td');wkTd.className='wk-num';wkTd.style.background=tc.bg;wkTd.textContent='W'+(i+1);tr.appendChild(wkTd);
-    ['focus','activities','notes'].forEach(function(col){
-      var td=document.createElement('td');td.style.background=tc.bg;
-      var div=document.createElement('div');div.contentEditable=true;div.textContent=row[col]||'';
+    var wkTd=document.createElement('td');wkTd.className='wk-num';wkTd.style.background=col.bg;wkTd.textContent='W'+(i+1);tr.appendChild(wkTd);
+    ['focus','activities','notes'].forEach(function(colName){
+      var td=document.createElement('td');td.style.background=col.bg;
+      var div=document.createElement('div');div.contentEditable=true;div.textContent=row[colName]||'';
       div.style.cssText='outline:none;min-height:20px;padding:2px 4px;border-radius:4px;';
-      div.addEventListener('focus',()=>{div.style.background='rgba(26,107,60,.1)';div.style.boxShadow='0 0 0 2px rgba(26,107,60,.25)';});
-      div.addEventListener('blur',()=>{div.style.background='';div.style.boxShadow='';});
-      var deb;div.addEventListener('input',function(){clearTimeout(deb);deb=setTimeout(async function(){plannerData[grp][i][col]=div.textContent;await dbSet('score_better_planner_'+grp,plannerData[grp]);},800);});
+      div.addEventListener('focus',function(){div.style.background='rgba(26,107,60,.1)';div.style.boxShadow='0 0 0 2px rgba(26,107,60,.25)';});
+      div.addEventListener('blur',function(){div.style.background='';div.style.boxShadow='';});
+      var deb;div.addEventListener('input',function(){clearTimeout(deb);deb=setTimeout(async function(){rows[i][colName]=div.textContent;plannerData[groupId]=rows;await dbSet('score_better_planner_'+groupId,rows);},800);});
       td.appendChild(div);tr.appendChild(td);
     });
     tb.appendChild(tr);
   });
 }
-function showPlannerGroup(grp){
-  ['thu','tue'].forEach(function(g){
-    document.getElementById('planner-'+g).style.display=g===grp?'block':'none';
-    var btn=document.getElementById('ptab-'+g);
-    if(g===grp){btn.style.background=g==='thu'?'#eef8f2':'#eef3fa';btn.style.color=g==='thu'?'var(--green)':'#1a4a7a';btn.style.borderBottom='3px solid '+(g==='thu'?'var(--green)':'#1a4a7a');}
-    else{btn.style.background='#f0f0f0';btn.style.color='#999';btn.style.borderBottom='3px solid transparent';}
+function showPlannerGroup(groupId){
+  allGroups.forEach(function(grp){
+    var tableDiv=document.getElementById('planner-'+grp.id);var btn=document.getElementById('ptab-'+grp.id);var col=getGroupColor(grp.id);var isActive=grp.id===groupId;
+    if(tableDiv)tableDiv.style.display=isActive?'block':'none';
+    if(btn){if(isActive){btn.style.background=col.bg;btn.style.color=col.text;btn.style.borderBottom='3px solid '+col.border;}else{btn.style.background='#f0f0f0';btn.style.color='#999';btn.style.borderBottom='3px solid transparent';}}
+  });
+}
+function buildPlannerStartFields(){
+  var el=document.getElementById('planner-start-fields');if(!el)return;el.innerHTML='';
+  allGroups.forEach(function(grp){
+    var div=document.createElement('div');div.className='fr';
+    div.innerHTML='<label>'+groupLabel(grp.id)+' Start Date</label><input type="date" id="prog-start-'+grp.id+'" value="'+(plannerDetails['prog-start-'+grp.id]||'')+'">';
+    el.appendChild(div);
   });
 }
 async function savePlannerDetails(){
-  var pd={'prog-start-thu':document.getElementById('prog-start-thu').value,'prog-start-tue':document.getElementById('prog-start-tue').value,'prog-notes':document.getElementById('prog-notes').value};
-  await dbSet('score_better_planner_details',pd);flash('planner-flash');renderDashboard();
+  var pd={'prog-notes':document.getElementById('prog-notes').value};
+  allGroups.forEach(function(grp){var el=document.getElementById('prog-start-'+grp.id);if(el)pd['prog-start-'+grp.id]=el.value;});
+  plannerDetails=pd;await dbSet('score_better_planner_details',pd);flash('planner-flash');renderDashboard();
 }
 
 // ── PLAYERS ──
 async function loadAllPlayers(){allPlayers=await dbGet('score_better_profiles')||[];populatePlayerDropdowns();renderPlayerList();}
-function groupLabel(g){return g==='thu'?'Thursday 10am':'Tuesday 2:30pm';}
+function groupLabel(g){var grp=allGroups.find(x=>x.id===g);return grp?grp.name+(grp.time?' '+grp.time:''):g;}
 function populatePlayerDropdowns(){
   [document.getElementById('player-select'),document.getElementById('trend-player-sel')].forEach(function(sel){
     if(!sel)return;var cur=sel.value;
     sel.innerHTML='<option value="">— Select a player —</option>';
-    [{g:'thu',label:'Thursday 10am'},{g:'tue',label:'Tuesday 2:30pm'}].forEach(function(grp){
-      var pl=allPlayers.filter(p=>p.group===grp.g);
-      if(pl.length){var og=document.createElement('optgroup');og.label=grp.label;pl.forEach(function(p){var o=document.createElement('option');o.value=p.id;o.textContent=p.name;if(String(p.id)===String(cur))o.selected=true;og.appendChild(o);});sel.appendChild(og);}
+    allGroups.forEach(function(grp){
+      var pl=allPlayers.filter(p=>p.group===grp.id);
+      if(pl.length){var og=document.createElement('optgroup');og.label=groupLabel(grp.id);pl.forEach(function(p){var o=document.createElement('option');o.value=p.id;o.textContent=p.name;if(String(p.id)===String(cur))o.selected=true;og.appendChild(o);});sel.appendChild(og);}
     });
   });
+}
+function updateGroupDropdowns(){
+  var pgSel=document.getElementById('p-group');
+  if(pgSel){var cv=pgSel.value;pgSel.innerHTML='';allGroups.forEach(function(g){var o=document.createElement('option');o.value=g.id;o.textContent=groupLabel(g.id);pgSel.appendChild(o);});if(cv&&allGroups.find(g=>g.id===cv))pgSel.value=cv;}
+  var qlSel=document.getElementById('ql-group');
+  if(qlSel){var cv2=qlSel.value;qlSel.innerHTML='<option value="">— Select group —</option>';allGroups.forEach(function(g){var o=document.createElement('option');o.value=g.id;o.textContent=groupLabel(g.id);qlSel.appendChild(o);});if(cv2&&allGroups.find(g=>g.id===cv2))qlSel.value=cv2;}
 }
 function newPlayerForm(){
   document.getElementById('form-title').textContent='➕ New Player Profile';
@@ -534,7 +598,7 @@ function newPlayerForm(){
   document.getElementById('p-name').value='';
   document.getElementById('p-hcp').value='';
   document.getElementById('p-goal').value='';
-  document.getElementById('p-group').value='thu';
+  document.getElementById('p-group').value=allGroups.length?allGroups[0].id:'';
   drillLogs={};buildPICats();buildOCNotes();
   ['pi-body','oc-body'].forEach(function(id){var b=document.getElementById(id),c=document.getElementById(id+'-chev');if(b)b.classList.remove('open');if(c)c.classList.remove('open');});
   updatePISummary();updateOCSummary();
@@ -572,15 +636,16 @@ function renderPlayerList(){
   count.textContent=allPlayers.length?'('+allPlayers.length+')':'';
   if(!allPlayers.length){list.innerHTML='<p style="font-size:12px;color:var(--light);">No players added yet.</p>';return;}
   list.innerHTML='';
-  [{g:'thu'},{g:'tue'}].forEach(function(grp){
-    var pl=allPlayers.filter(p=>p.group===grp.g);if(!pl.length)return;
-    var hdr=document.createElement('div');hdr.style.cssText='font-size:11px;font-weight:800;color:'+(grp.g==='thu'?'var(--green)':'#1a4a7a')+';margin:12px 0 6px;';hdr.textContent=groupLabel(grp.g);list.appendChild(hdr);
+  allGroups.forEach(function(grp){
+    var pl=allPlayers.filter(p=>p.group===grp.id);if(!pl.length)return;
+    var col=getGroupColor(grp.id);
+    var hdr=document.createElement('div');hdr.style.cssText='font-size:11px;font-weight:800;color:'+col.text+';margin:12px 0 6px;';hdr.textContent=groupLabel(grp.id);list.appendChild(hdr);
     pl.forEach(function(p){
       var catPIs=PI_CATS.map(cat=>calcCatPI(cat.key,p.drillLogs||{})).filter(x=>x!==null);
       var avgStr=catPIs.length?'Overall PI: '+(catPIs.reduce((a,b)=>a+b,0)/catPIs.length).toFixed(0)+'/100':'No PI logged';
       var item=document.createElement('div');item.className='player-item';
       item.onclick=function(){document.getElementById('player-select').value=p.id;loadPlayerProfile();showTab('players',document.querySelectorAll('.tab')[3]);window.scrollTo({top:0,behavior:'smooth'});};
-      item.innerHTML='<div class="pav '+p.group+'">⛳</div><div class="pinfo"><h4>'+p.name+'</h4><p>'+groupLabel(p.group)+' · HCP: '+(p.hcp||'—')+' · '+avgStr+'</p></div><span class="badge '+p.group+'">'+groupLabel(p.group).split(' ')[0]+'</span><span class="pdel" onclick="deletePlayer('+p.id+',event)">✕</span>';
+      item.innerHTML='<div class="pav" style="background:'+col.avatarBg+';">⛳</div><div class="pinfo"><h4>'+p.name+'</h4><p>'+groupLabel(p.group)+' · HCP: '+(p.hcp||'—')+' · '+avgStr+'</p></div><span class="badge" style="background:'+col.avatarBg+';color:'+col.text+';">'+grp.name+'</span><span class="pdel" onclick="deletePlayer('+p.id+',event)">✕</span>';
       list.appendChild(item);
     });
   });
@@ -742,21 +807,22 @@ function buildTrendSVG(pts,label){
 // ── GROUP OVERVIEW ──
 function renderOverview(){
   var el=document.getElementById('ov-content');el.innerHTML='';
-  [{g:'thu',label:'Thursday 10am',col:'var(--green)'},{g:'tue',label:'Tuesday 2:30pm',col:'#1a4a7a'}].forEach(function(grp){
-    var players=allPlayers.filter(p=>p.group===grp.g);
+  allGroups.forEach(function(grp){
+    var col=getGroupColor(grp.id);
+    var players=allPlayers.filter(p=>p.group===grp.id);
     var card=document.createElement('div');card.className='ov-group-card';
-    var hdr=document.createElement('div');hdr.className='ov-group-header '+grp.g;
+    var hdr=document.createElement('div');hdr.className='ov-group-header';
+    hdr.style.cssText='background:'+col.bg+';border-bottom:3px solid '+col.border+';';
     var body=document.createElement('div');body.className='ov-group-body';
     hdr.onclick=function(){body.style.display=body.style.display==='none'?'block':'none';};
-    hdr.innerHTML='<div><div style="font-size:14px;font-weight:800;color:'+grp.col+';">⛳ '+grp.label+'</div><div style="font-size:11px;color:var(--mid);">'+players.length+' player'+(players.length!==1?'s':'')+'</div></div>';
+    hdr.innerHTML='<div><div style="font-size:14px;font-weight:800;color:'+col.text+';">⛳ '+groupLabel(grp.id)+'</div><div style="font-size:11px;color:var(--mid);">'+players.length+' player'+(players.length!==1?'s':'')+'</div></div>';
     if(!players.length){body.innerHTML='<p style="font-size:12px;color:var(--light);">No players in this group.</p>';}
     else{
       players.forEach(function(p){
         var row=document.createElement('div');row.className='ov-player-row';
         var pills='';
         PI_CATS.forEach(function(cat){
-          var catPI=calcCatPI(cat.key,p.drillLogs||{});
-          var basePI=calcCatPIAtIndex(cat.key,p.drillLogs||{},0);
+          var catPI=calcCatPI(cat.key,p.drillLogs||{});var basePI=calcCatPIAtIndex(cat.key,p.drillLogs||{},0);
           var scoreStr=catPI!==null?catPI+'/100':'—';
           var dh='';if(catPI!==null&&basePI!==null){var d=catPI-basePI;if(d>0)dh=' <span style="color:var(--green);font-size:9px;">▲'+d+'</span>';else if(d<0)dh=' <span style="color:#c0392b;font-size:9px;">▼'+Math.abs(d)+'</span>';}
           var bg=catPI!==null?(piColor(catPI).replace('pi-band-low','#fde8e8').replace('pi-band-mid','#fff3cd').replace('pi-band-good','#eef8f2').replace('pi-band-great','#d0e8ff')):'#eee';
@@ -768,7 +834,6 @@ function renderOverview(){
         row.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div style="font-size:13px;font-weight:700;">'+p.name+' <span style="font-size:10px;color:var(--mid);">HCP '+(p.hcp||'—')+'</span></div>'+(overall?'<span class="pi-score-badge '+piColor(overall)+'" style="font-size:11px;">Overall '+overall+'/100</span>':'')+'</div><div class="ov-pi-pills">'+pills+'</div>';
         body.appendChild(row);
       });
-      // group averages
       var avgRow=document.createElement('div');avgRow.style.cssText='padding:10px 12px;background:#f4f6f8;border-radius:8px;border:1px solid #eee;margin-top:8px;';
       var avgHtml='<div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mid);margin-bottom:6px;">Group averages (latest)</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
       PI_CATS.forEach(function(cat){
@@ -829,16 +894,13 @@ function renderTrends(){
 function renderDashboard(){renderDashWeek();renderDashAttention();}
 function renderDashWeek(){
   var titleEl=document.getElementById('dash-week-title');var contentEl=document.getElementById('dash-week-content');
-  var thuStart=document.getElementById('prog-start-thu')?document.getElementById('prog-start-thu').value:'';
-  var tueStart=document.getElementById('prog-start-tue')?document.getElementById('prog-start-tue').value:'';
   var now=new Date();now.setHours(0,0,0,0);var html='';var built=false;
-  [{label:'Thursday 10am',start:thuStart},{label:'Tuesday 2:30pm',start:tueStart}].forEach(function(grp){
-    if(!grp.start)return;
-    var s=new Date(grp.start);s.setHours(0,0,0,0);
-    var diff=Math.floor((now-s)/(1000*60*60*24));
-    var wk=Math.max(1,Math.min(6,Math.floor(diff/7)+1));
-    var w=WEEK_DEFAULTS[wk-1];
-    html+='<div style="padding:8px 0;border-bottom:1px solid #f0f0f0;"><div style="font-size:11px;font-weight:800;color:var(--green);">'+grp.label+'</div><div style="font-size:13px;font-weight:800;color:var(--dark);margin-top:2px;">Week '+wk+' — '+w.theme+'</div></div>';
+  allGroups.forEach(function(grp){
+    var startVal=plannerDetails['prog-start-'+grp.id]||'';if(!startVal)return;
+    var s=new Date(startVal);s.setHours(0,0,0,0);
+    var diff=Math.floor((now-s)/(1000*60*60*24));var wk=Math.max(1,Math.min(6,Math.floor(diff/7)+1));var w=WEEK_DEFAULTS[wk-1];
+    var col=getGroupColor(grp.id);
+    html+='<div style="padding:8px 0;border-bottom:1px solid #f0f0f0;"><div style="font-size:11px;font-weight:800;color:'+col.text+';">'+groupLabel(grp.id)+'</div><div style="font-size:13px;font-weight:800;color:var(--dark);margin-top:2px;">Week '+wk+' — '+w.theme+'</div></div>';
     built=true;
   });
   if(!built){titleEl.textContent='📅 Program Week';contentEl.innerHTML='<p style="font-size:12px;color:var(--light);">Set start dates in the Planner tab to track current week.</p>';return;}
@@ -919,12 +981,72 @@ async function qlSubmit(){
   renderDashboard();
 }
 
+// ── GROUPS ──
+async function loadGroups(){
+  var stored=await dbGet('score_better_groups');
+  if(!stored){stored=[{id:'thu',name:'Thursday',time:'10am'},{id:'tue',name:'Tuesday',time:'2:30pm'}];await dbSet('score_better_groups',stored);}
+  allGroups=stored;updateGroupDropdowns();
+}
+function renderGroupsList(){
+  var el=document.getElementById('groups-list');if(!el)return;
+  if(!allGroups.length){el.innerHTML='<p style="font-size:12px;color:var(--light);padding:8px 0;">No groups yet. Add one below.</p>';return;}
+  el.innerHTML='';
+  allGroups.forEach(function(grp,idx){
+    var col=GROUP_COLORS[idx%GROUP_COLORS.length];var playerCount=allPlayers.filter(p=>p.group===grp.id).length;
+    var item=document.createElement('div');item.className='groups-list-item';
+    item.innerHTML='<div class="group-color-dot" style="background:'+col.border+';"></div>'
+      +'<div class="groups-list-item-info"><h4>'+grp.name+(grp.time?' '+grp.time:'')+'</h4><p>'+playerCount+' player'+(playerCount!==1?'s':'')+'</p></div>'
+      +'<div class="groups-list-item-actions">'
+      +'<button class="btn-sm btn-sm-edit" onclick="editGroup(\''+grp.id+'\')">✏️ Edit</button>'
+      +'<button class="btn-sm btn-sm-del" onclick="deleteGroup(\''+grp.id+'\')">✕ Delete</button>'
+      +'</div>';
+    el.appendChild(item);
+  });
+}
+function editGroup(groupId){
+  var grp=allGroups.find(g=>g.id===groupId);if(!grp)return;
+  document.getElementById('grp-edit-id').value=groupId;
+  document.getElementById('grp-name').value=grp.name;
+  document.getElementById('grp-time').value=grp.time||'';
+  document.getElementById('group-form-title').textContent='✏️ Edit Group';
+  document.getElementById('grp-cancel-btn').style.display='inline-block';
+  document.getElementById('grp-name').focus();
+}
+function cancelGroupEdit(){
+  document.getElementById('grp-edit-id').value='';document.getElementById('grp-name').value='';document.getElementById('grp-time').value='';
+  document.getElementById('group-form-title').textContent='➕ Add New Group';document.getElementById('grp-cancel-btn').style.display='none';
+}
+async function saveGroup(){
+  var name=document.getElementById('grp-name').value.trim();var time=document.getElementById('grp-time').value.trim();var editId=document.getElementById('grp-edit-id').value;
+  if(!name){alert('Please enter a group name.');return;}
+  if(editId){var idx=allGroups.findIndex(g=>g.id===editId);if(idx>=0){allGroups[idx].name=name;allGroups[idx].time=time;}}
+  else{allGroups.push({id:'g'+Date.now(),name,time});}
+  await dbSet('score_better_groups',allGroups);
+  cancelGroupEdit();renderGroupsList();updateGroupDropdowns();populatePlayerDropdowns();
+  buildPlannerTabs();allGroups.forEach(function(grp){buildPlannerTable(grp.id);});buildPlannerStartFields();
+  renderPlayerList();renderOverview();flash('groups-flash');
+}
+async function deleteGroup(groupId){
+  var grp=allGroups.find(g=>g.id===groupId);if(!grp)return;
+  var assigned=allPlayers.filter(p=>p.group===groupId);
+  var msg='Delete group "'+groupLabel(groupId)+'"?';
+  if(assigned.length){msg=assigned.length+' player'+(assigned.length!==1?'s are':' is')+' assigned to "'+groupLabel(groupId)+'":\n'+assigned.map(p=>'• '+p.name).join('\n')+'\n\nDeleting this group will leave these players without a group. Proceed?';}
+  if(!confirm(msg))return;
+  allGroups=allGroups.filter(g=>g.id!==groupId);
+  await dbSet('score_better_groups',allGroups);
+  renderGroupsList();updateGroupDropdowns();populatePlayerDropdowns();
+  buildPlannerTabs();allGroups.forEach(function(grp){buildPlannerTable(grp.id);});buildPlannerStartFields();
+  renderPlayerList();renderOverview();flash('groups-flash');
+}
+
 // ── INIT ──
 async function init(){
   try{
     await sb.from('jdp_data').select('key').limit(1);
     document.getElementById('sync-msg').textContent='Live sync on';
+    await loadGroups();
     await Promise.all([loadProgram(),loadAllPlayers(),loadPlanner()]);
+    renderGroupsList();
     buildPICats();buildOCNotes();renderDashboard();
   }catch(e){
     document.getElementById('sync-dot').className='sync-dot off';
